@@ -111,7 +111,7 @@ func TestCachingEvaluator_SingleRequest_NoShowAll(t *testing.T) {
 	assert.Equalf(t, uint64(2421), response.TotalLag, "Expected total_lag to be 2421, not %v", response.TotalLag)
 	assert.Equalf(t, "testcluster", response.Cluster, "Expected cluster to be testcluster, not %v", response.Cluster)
 	assert.Equalf(t, "testgroup", response.Group, "Expected group to be testgroup, not %v", response.Group)
-	assert.Lenf(t, response.Partitions, 0, "Expected 0 partition status objects, not %v", len(response.Partitions))
+	assert.Lenf(t, response.Partitions, 1, "Expected 1 partition status object, not %v", len(response.Partitions))
 
 	stopTestCluster(storageCoordinator, module)
 }

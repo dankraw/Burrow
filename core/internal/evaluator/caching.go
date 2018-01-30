@@ -153,10 +153,8 @@ func (module *CachingEvaluator) getConsumerStatus(request *protocol.EvaluatorReq
 			// Copy over any partitions that do not have the status StatusOK
 			count := 0
 			for _, partition := range cachedStatus.Partitions {
-				if partition.Status > protocol.StatusOK {
-					status.Partitions[count] = partition
-					count++
-				}
+				status.Partitions[count] = partition
+				count++
 			}
 			status.Partitions = status.Partitions[0:count]
 		}

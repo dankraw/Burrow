@@ -67,3 +67,16 @@ template-close="conf/default-http-delete.tmpl"
 method-close="DELETE"
 send-close=true
 threshold=1
+
+[notifier.graphite]
+class-name="graphite"
+metrics-cleanup-interval=20
+metrics-ttl=1
+metrics-prefix="stats.tech.mirko"
+interval=45
+inactivity-timeout=60
+threshold=1
+graphite-address="localhost:2003"
+reporting-interval=30
+send-close=true
+templates-enabled=false

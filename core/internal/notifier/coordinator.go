@@ -143,6 +143,13 @@ func getModuleForClass(app *protocol.ApplicationContext,
 			templateOpen:   templateOpen,
 			templateClose:  templateClose,
 		}
+	case "graphite":
+		return &GraphiteNotifier{
+			App:            app,
+			Log:            logger,
+			groupWhitelist: groupWhitelist,
+			groupBlacklist: groupBlacklist,
+		}
 	default:
 		panic("Unknown notifier className provided: " + className)
 	}
@@ -183,6 +190,7 @@ func (nc *Coordinator) Configure() {
 		// Set some defaults for common module fields
 		viper.SetDefault(configRoot+".interval", 60)
 		viper.SetDefault(configRoot+".threshold", 2)
+		viper.SetDefault(configRoot+".templates-enabled", true)
 
 		// Compile the whitelist for the consumer groups to notify for
 		var groupWhitelist *regexp.Regexp
@@ -213,20 +221,22 @@ func (nc *Coordinator) Configure() {
 
 		// Compile the templates
 		var templateOpen, templateClose *template.Template
-		tmpl, err := nc.templateParseFunc(viper.GetString(configRoot + ".template-open"))
-		if err != nil {
-			nc.Log.Panic("Failed to compile TemplateOpen", zap.Error(err), zap.String("module", name))
-			panic(err)
-		}
-		templateOpen = tmpl.Templates()[0]
-
-		if viper.GetBool(configRoot + ".send-close") {
-			tmpl, err = nc.templateParseFunc(viper.GetString(configRoot + ".template-close"))
+		if viper.GetBool(configRoot + ".templates-enabled") {
+			tmpl, err := nc.templateParseFunc(viper.GetString(configRoot + ".template-open"))
 			if err != nil {
-				nc.Log.Panic("Failed to compile TemplateClose", zap.Error(err), zap.String("module", name))
+				nc.Log.Panic("Failed to compile TemplateOpen", zap.Error(err), zap.String("module", name))
 				panic(err)
 			}
-			templateClose = tmpl.Templates()[0]
+			templateOpen = tmpl.Templates()[0]
+
+			if viper.GetBool(configRoot + ".send-close") {
+				tmpl, err = nc.templateParseFunc(viper.GetString(configRoot + ".template-close"))
+				if err != nil {
+					nc.Log.Panic("Failed to compile TemplateClose", zap.Error(err), zap.String("module", name))
+					panic(err)
+				}
+				templateClose = tmpl.Templates()[0]
+			}
 		}
 
 		module := getModuleForClass(nc.App, name, viper.GetString(configRoot+".class-name"), groupWhitelist, groupBlacklist, extras, templateOpen, templateClose)
