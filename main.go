@@ -44,6 +44,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/linkedin/Burrow/core"
+	"bytes"
 )
 
 // exitCode wraps a return value for the application
@@ -70,18 +71,38 @@ func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	// The only command line arg is the config file
+	configEnvName := flag.String("config-env", "", "Environment variable that contains the configuration file")
 	configPath := flag.String("config-dir", ".", "Directory that contains the configuration file")
+	configType := flag.String("config-type", "", "Configuration file type")
 	flag.Parse()
 
-	// Load the configuration from the file
 	viper.SetConfigName("burrow")
-	viper.AddConfigPath(*configPath)
-	fmt.Fprintln(os.Stderr, "Reading configuration from", *configPath)
-	err := viper.ReadInConfig()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed reading configuration:", err.Error())
-		panic(exitCode{1})
+
+	if *configEnvName != "" && *configType != ""{
+		// Load configuration from environment variables
+		viper.SetConfigType(*configType)
+		configEnv := os.Getenv(*configEnvName)
+		fmt.Fprintln(os.Stderr, "Reading configuration from environment variable", *configEnvName)
+		if configEnv == "" {
+			fmt.Fprintln(os.Stderr, "Environment variable not set", *configEnvName)
+			panic(exitCode{1})
+		}
+
+		err := viper.ReadConfig(bytes.NewBuffer([]byte(configEnv)))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Failed reading configuration:", err.Error())
+			panic(exitCode{1})
+		}
+	} else {
+		// Load the configuration from the file
+		viper.AddConfigPath(*configPath)
+		fmt.Fprintln(os.Stderr, "Reading configuration from", *configPath)
+
+		err := viper.ReadInConfig()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Failed reading configuration:", err.Error())
+			panic(exitCode{1})
+		}
 	}
 
 	// Create the PID file to lock out other processes
